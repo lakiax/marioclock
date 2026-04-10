@@ -1,0 +1,105 @@
+// ============ 文件：src/engine.c ============
+#include "engine.h"
+#include "hal.h"
+
+uint16_t screen_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+#define COLOR_TRANSPARENT 0x949F // LVGL RGB565 小端的透明背景色
+
+void Engine_ClearBuffer(uint16_t color) {
+    for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) screen_buffer[i] = color;
+}
+
+// 核心功能：支持向左转向（镜像翻转）的绘图函数
+void Engine_DrawSprite(int sx, int sy, int sw, int sh, const uint8_t* img_data, bool flip_h) {
+    const uint16_t* pixels = (const uint16_t*)img_data;
+
+    for (int y = 0; y < sh; y++) {
+        for (int x = 0; x < sw; x++) {
+            // 如果要求水平翻转，从右边倒着读像素
+            int src_x = flip_h ? (sw - 1 - x) : x; 
+            uint16_t pixel = pixels[y * sw + src_x];
+            
+            if (pixel != COLOR_TRANSPARENT) {
+                int targetX = sx + x;
+                int targetY = sy + y;
+                if (targetX >= 0 && targetX < SCREEN_WIDTH && targetY >= 0 && targetY < SCREEN_HEIGHT) {
+                    screen_buffer[targetY * SCREEN_WIDTH + targetX] = pixel;
+                }
+            }
+        }
+    }
+}
+
+void Engine_DrawAtlasSprite(int sx, int sy, int sw, int sh, int src_x, int src_y, int atlas_w, const uint8_t* img_data) {
+    const uint16_t* pixels = (const uint16_t*)img_data;
+    for (int y = 0; y < sh; y++) {
+        for (int x = 0; x < sw; x++) {
+            // 计算在大图集数组中的位置
+            uint16_t pixel = pixels[(src_y + y) * atlas_w + (src_x + x)];
+            if (pixel != COLOR_TRANSPARENT) {
+                int targetX = sx + x;
+                int targetY = sy + y;
+                if (targetX >= 0 && targetX < SCREEN_WIDTH && targetY >= 0 && targetY < SCREEN_HEIGHT) {
+                    screen_buffer[targetY * SCREEN_WIDTH + targetX] = pixel;
+                }
+            }
+        }
+    }
+}
+
+static uint16_t BlendRgb565(uint16_t src, uint16_t dst, uint8_t alpha_percent) {
+    // alpha_percent 取值 0~100，0 完全透明，100 完全不透明
+    uint8_t src_r = (src >> 11) & 0x1F;
+    uint8_t src_g = (src >> 5) & 0x3F;
+    uint8_t src_b = src & 0x1F;
+    uint8_t dst_r = (dst >> 11) & 0x1F;
+    uint8_t dst_g = (dst >> 5) & 0x3F;
+    uint8_t dst_b = dst & 0x1F;
+
+    uint8_t out_r = (src_r * alpha_percent + dst_r * (100 - alpha_percent) + 50) / 100;
+    uint8_t out_g = (src_g * alpha_percent + dst_g * (100 - alpha_percent) + 50) / 100;
+    uint8_t out_b = (src_b * alpha_percent + dst_b * (100 - alpha_percent) + 50) / 100;
+
+    return (out_r << 11) | (out_g << 5) | out_b;
+}
+
+void Engine_DrawScaledAtlasSprite(int sx, int sy, int dw, int dh, int src_x, int src_y, int sw, int sh, int atlas_w, const uint8_t* img_data) {
+    const uint16_t* pixels = (const uint16_t*)img_data;
+    for (int y = 0; y < dh; y++) {
+        // 最近邻缩放：将目标像素映射回源像素
+        int src_row = y * sh / dh;
+        for (int x = 0; x < dw; x++) {
+            int src_col = x * sw / dw;
+            uint16_t pixel = pixels[(src_y + src_row) * atlas_w + (src_x + src_col)];
+            if (pixel != COLOR_TRANSPARENT) {
+                int targetX = sx + x;
+                int targetY = sy + y;
+                if (targetX >= 0 && targetX < SCREEN_WIDTH && targetY >= 0 && targetY < SCREEN_HEIGHT) {
+                    screen_buffer[targetY * SCREEN_WIDTH + targetX] = pixel;
+                }
+            }
+        }
+    }
+}
+
+void Engine_DrawScaledAtlasSpriteAlpha(int sx, int sy, int dw, int dh, int src_x, int src_y, int sw, int sh, int atlas_w, const uint8_t* img_data, uint8_t alpha) {
+    const uint16_t* pixels = (const uint16_t*)img_data;
+    if (alpha == 0) return;
+    if (alpha > 100) alpha = 100;
+
+    for (int y = 0; y < dh; y++) {
+        int src_row = y * sh / dh;
+        for (int x = 0; x < dw; x++) {
+            int src_col = x * sw / dw;
+            uint16_t pixel = pixels[(src_y + src_row) * atlas_w + (src_x + src_col)];
+            if (pixel != COLOR_TRANSPARENT) {
+                int targetX = sx + x;
+                int targetY = sy + y;
+                if (targetX >= 0 && targetX < SCREEN_WIDTH && targetY >= 0 && targetY < SCREEN_HEIGHT) {
+                    uint16_t dst = screen_buffer[targetY * SCREEN_WIDTH + targetX];
+                    screen_buffer[targetY * SCREEN_WIDTH + targetX] = BlendRgb565(pixel, dst, alpha);
+                }
+            }
+        }
+    }
+}

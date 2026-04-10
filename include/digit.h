@@ -1,0 +1,61 @@
+#ifndef DIGIT_H
+#define DIGIT_H
+
+#include <stdint.h>
+#include <time.h>
+
+typedef struct {
+    int val;           // 当前显示的数字
+    int next_val;      // 下一个目标数字（碎裂完成后生成新数字）
+    int state;         // 0:常亮, 1:旧数字碎裂中, 2:生成中
+    uint32_t timer;    // 状态计时器
+    int sx, sy;        // 在屏幕上的位置
+} TimeDigit;
+
+typedef struct {
+    int x, y;          // 砖块位置
+    int state;         // 0:正常, 1:碎裂中, 2:待生成, 3:待碎裂
+    uint32_t timer;    // 计时器/调度时间
+} Brick;
+
+/**
+ * 初始化时间数字显示模块
+ */
+void Digit_Init(void);
+
+/**
+ * 从系统时间初始化 4 个数字
+ * @param tm_p 系统时间
+ * @param offset_y 垂直偏移量
+ */
+void Digit_InitFromTime(struct tm* tm_p, int offset_y);
+
+/**
+ * 更新所有数字的状态机
+ * @param current_ticks 当前 tick 值
+ * @param tm_p 当前系统时间
+ */
+void Digit_Update(uint32_t current_ticks, struct tm* tm_p);
+
+/**
+ * 渲染所有数字和冒号
+ * @param current_ticks 当前 tick 值（用于冒号闪烁）
+ * @param tm_p 当前系统时间（用于冒号秒数判断）
+ * @param atlas 数字图集数据指针
+ * @param colon_atlas 冒号图集数据指针
+ */
+void Digit_Render(uint32_t current_ticks, struct tm* tm_p, const uint8_t* atlas, const uint8_t* colon_atlas);
+
+/**
+ * 检查马里奥与砖块的碰撞
+ * @param mario_x 马里奥x位置
+ * @param mario_y 马里奥y位置
+ * @param mario_vx 马里奥x速度
+ * @param mario_vy 马里奥y速度
+ * @param out_x 输出调整后的x位置
+ * @param out_y 输出调整后的y位置
+ * @return 碰撞类型: 0=无碰撞, 1=水平碰撞, 2=从上方碰撞, 3=从下方碰撞(顶碎)
+ */
+int Digit_CheckCollision(float mario_x, float mario_y, float mario_vx, float mario_vy, float* out_x, float* out_y);
+
+#endif // DIGIT_H

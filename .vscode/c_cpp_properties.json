@@ -1,0 +1,35 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
+{
+    "configurations": [
+        {
+            "name": "PlatformIO",
+            "includePath": [
+                "//192.168.213.130/VM-Ubuntu/MarioClock/include",
+                "//192.168.213.130/VM-Ubuntu/MarioClock/src",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "//192.168.213.130/VM-Ubuntu/MarioClock/include",
+                    "//192.168.213.130/VM-Ubuntu/MarioClock/src",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=60119",
+                "PC_SIMULATOR",
+                ""
+            ],
+            "compilerPath": "gcc",
+            "compilerArgs": [
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}
