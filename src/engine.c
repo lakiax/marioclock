@@ -5,6 +5,12 @@
 uint16_t screen_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 #define COLOR_TRANSPARENT 0x949F // LVGL RGB565 小端的透明背景色
 
+// 3x5 数字字体 (0-9)，每行3位，最高位在左边
+static const uint8_t font_3x5[10][5] = {
+    {7, 5, 5, 5, 7}, {2, 6, 2, 2, 7}, {7, 1, 7, 4, 7}, {7, 1, 7, 1, 7}, {5, 5, 7, 1, 1},
+    {7, 4, 7, 1, 7}, {7, 4, 7, 5, 7}, {7, 1, 1, 1, 1}, {7, 5, 7, 5, 7}, {7, 5, 7, 1, 7}
+};
+
 void Engine_ClearBuffer(uint16_t color) {
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) screen_buffer[i] = color;
 }
@@ -98,6 +104,23 @@ void Engine_DrawScaledAtlasSpriteAlpha(int sx, int sy, int dw, int dh, int src_x
                 if (targetX >= 0 && targetX < SCREEN_WIDTH && targetY >= 0 && targetY < SCREEN_HEIGHT) {
                     uint16_t dst = screen_buffer[targetY * SCREEN_WIDTH + targetX];
                     screen_buffer[targetY * SCREEN_WIDTH + targetX] = BlendRgb565(pixel, dst, alpha);
+                }
+            }
+        }
+    }
+}
+
+// 绘制单个数字 (0-9)，使用 3x5 字体，每个像素放大为 1x1（小字体）
+void Engine_DrawNumber(int x, int y, int number, uint16_t color) {
+    if (number < 0 || number > 9) return;
+    for (int row = 0; row < 5; row++) {
+        uint8_t line = font_3x5[number][row];
+        for (int col = 0; col < 3; col++) {
+            if (line & (1 << (2 - col))) { // 最高位在左边
+                int px = x + col;
+                int py = y + row;
+                if (px >= 0 && px < SCREEN_WIDTH && py >= 0 && py < SCREEN_HEIGHT) {
+                    screen_buffer[py * SCREEN_WIDTH + px] = color;
                 }
             }
         }

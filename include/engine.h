@@ -33,3 +33,6 @@ void Engine_DrawScaledAtlasSprite(int sx, int sy, int dw, int dh, int src_x, int
 // 缩放绘制并支持透明度渐显，alpha 为 0~100 的百分比
 void Engine_DrawScaledAtlasSpriteAlpha(int sx, int sy, int dw, int dh, int src_x, int src_y, int sw, int sh, int atlas_w, const uint8_t* img_data, uint8_t alpha);
 extern uint16_t screen_buffer[];
+
+// 3x5 数字字体渲染
+void Engine_DrawNumber(int x, int y, int number, uint16_t color);

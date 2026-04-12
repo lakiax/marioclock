@@ -15,6 +15,10 @@ static struct {
     uint32_t frame_start_ticks;
     time_t current_time;
     struct tm* tm_p;
+    // FPS 计算相关
+    uint32_t frame_count;
+    uint32_t last_fps_time;
+    uint32_t current_fps;
 } game_state = {0};
 
 void Game_Init(void) {
@@ -99,15 +103,35 @@ void Game_TaskRender(void) {
     // 3. 前景层：马里奥
     Mario_Render(&game_state.mario);
     
+    // 4. 左上角显示实时FPS (小字体)
+    int fps = game_state.current_fps;
+    if (fps > 999) fps = 999; // 限制为三位数
+    int hundreds = fps / 100;
+    int tens = (fps % 100) / 10;
+    int ones = fps % 10;
+    int x = 2;
+    // 绘制百位数
+    if (hundreds > 0) {
+        Engine_DrawNumber(x, 2, hundreds, 0xFFFF);
+        x += 4; // 数字宽度3 + 间距1
+    }
+    // 绘制十位数（如果百位数存在或十位数>0）
+    if (hundreds > 0 || tens > 0) {
+        Engine_DrawNumber(x, 2, tens, 0xFFFF);
+        x += 4;
+    }
+    // 绘制个位数
+    Engine_DrawNumber(x, 2, ones, 0xFFFF);
+    
     // 更新屏幕显示
     HAL_UpdateScreen(screen_buffer);
 }
 
 void Game_TaskFrameRateControl(void) {
-    // 锁帧 60FPS
+    // 锁帧 50 FPS (20 ms/frame)
     uint32_t cost = HAL_GetTicks() - game_state.frame_start_ticks;
-    if (cost < 16) {
-        HAL_Delay(16 - cost);
+    if (cost < 20) {
+        HAL_Delay(20 - cost);
     }
 }
 
@@ -115,4 +139,13 @@ void Game_TaskFrameRateControl(void) {
 void Game_StartFrame(void) {
     game_state.current_ticks = HAL_GetTicks();
     game_state.frame_start_ticks = game_state.current_ticks;
+
+    // FPS 计算
+    game_state.frame_count++;
+    uint32_t now = game_state.current_ticks;
+    if (now - game_state.last_fps_time >= 1000) {
+        game_state.current_fps = game_state.frame_count;
+        game_state.frame_count = 0;
+        game_state.last_fps_time = now;
+    }
 }

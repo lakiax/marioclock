@@ -14,8 +14,8 @@ void HAL_Init(void) {
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
         SCREEN_WIDTH * DISPLAY_SCALE, SCREEN_HEIGHT * DISPLAY_SCALE, SDL_WINDOW_SHOWN);
         
-    // 【核心修改】加入垂直同步 (VSYNC)，消除画面撕裂和卡顿感
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    // 移除垂直同步 (VSYNC) 以实现最快渲染速度
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0"); 
     

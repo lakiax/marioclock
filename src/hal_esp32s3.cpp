@@ -28,10 +28,13 @@
 
 // ================= 颜色定义 (RGB565) =================
 #define COLOR_WHITE   0xFFFF
-#define COLOR_BLACK   0x0000   
-#define COLOR_BLUE    0x001F  
+#define COLOR_BLACK   0x0000
+#define COLOR_BLUE    0x001F
 #define COLOR_RED     0xF800
 #define COLOR_GREEN   0x07E0
+
+// SPI 时钟频率 (Hz)，可根据屏幕驱动能力和稳定性调整
+#define SPI_CLOCK     60000000
 
 // 按键引脚定义
 #define BTN_LEFT_PIN  10
@@ -57,7 +60,7 @@ static void TFT_Init(void);
 static void TFT_SEND_CMD(uint8_t cmd) {
     TFT_CS_0();
     TFT_DC_0();
-    SPI.beginTransaction(SPISettings(40000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE0));
     SPI.transfer(cmd);
     SPI.endTransaction();
     TFT_CS_1();
@@ -66,7 +69,7 @@ static void TFT_SEND_CMD(uint8_t cmd) {
 static void TFT_SEND_DATA(uint8_t data) {
     TFT_CS_0();
     TFT_DC_1();
-    SPI.beginTransaction(SPISettings(40000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE0));
     SPI.transfer(data);
     SPI.endTransaction();
     TFT_CS_1();
@@ -98,7 +101,7 @@ static void TFT_Fill(uint16_t x, uint16_t y, uint16_t width, uint16_t height, ui
     
     TFT_CS_0();
     TFT_DC_1();
-    SPI.beginTransaction(SPISettings(40000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE0));
 
     uint16_t color_swap = (color >> 8) | (color << 8);
     uint32_t pixels = width * height;
@@ -271,23 +274,27 @@ void HAL_UpdateScreen(const uint16_t* framebuffer) {
     
     TFT_CS_0();
     TFT_DC_1();
-    SPI.beginTransaction(SPISettings(40000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE0));
     
     // 旋转映射：将横屏游戏画面（284x76）顺时针旋转90度以适应竖屏屏幕（76x284）
+    // 使用行缓冲区批量传输，减少 SPI 事务开销
+    uint8_t lineBuf[TFT_NATIVE_WIDTH * 2]; // 每行 76 像素 × 2 字节 = 152 字节
     for (int y = 0; y < TFT_NATIVE_HEIGHT; y++) {
+        int src_col = y;  // 游戏列 = 屏幕行
+        uint8_t *ptr = lineBuf;
         for (int x = 0; x < TFT_NATIVE_WIDTH; x++) {
-            // 游戏画面的列对应屏幕的行
-            int src_col = y;  // 游戏列 = 屏幕行
             int src_row = SCREEN_HEIGHT - 1 - x;  // 游戏行 = 屏幕高度 - 1 - 屏幕列
-            
+            uint16_t color;
             if (src_row >= 0 && src_row < SCREEN_HEIGHT && src_col >= 0 && src_col < SCREEN_WIDTH) {
-                uint16_t color = framebuffer[src_row * SCREEN_WIDTH + src_col];
-                SPI.write16(color);
+                color = framebuffer[src_row * SCREEN_WIDTH + src_col];
             } else {
-                // 如果映射超出范围，发送黑色
-                SPI.write16(0x0000);
+                color = 0x0000; // 映射超出范围，发送黑色
             }
+            // MSB 优先，先发送高字节，后发送低字节
+            *ptr++ = (uint8_t)(color >> 8);
+            *ptr++ = (uint8_t)(color & 0xFF);
         }
+        SPI.writeBytes(lineBuf, sizeof(lineBuf));
     }
     
     SPI.endTransaction();
