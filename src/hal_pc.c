@@ -43,6 +43,12 @@ uint8_t HAL_GetInput(void) {
     return btn_state;
 }
 
+void HAL_ClearScreen(uint16_t color) {
+    // PC端没有单独的缓冲区清屏操作，由Engine_ClearBuffer处理
+    // 此函数在ESP32端用于直接操作显存
+    (void)color;
+}
+
 void HAL_Delay(uint32_t ms) { SDL_Delay(ms); }
 uint32_t HAL_GetTicks(void) { return SDL_GetTicks(); }
 #endif

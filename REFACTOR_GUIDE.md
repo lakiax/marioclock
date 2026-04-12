@@ -109,7 +109,7 @@ struct {
 
 ### 模块依赖图
 ```
-main.c (仅负责调度)
+main.cpp (仅负责调度)
    ↓
 game.c (协调各模块)
    ├─ mario.c
@@ -148,7 +148,7 @@ pio run -e native -t upload  # 如果支持上传
 
 ---
 
-## 📝 主程序 (main.c) 变化
+## 📝 主程序 (main.cpp) 变化
 
 ### 重构前 (~250 行)
 - 混杂的全局变量和常量
@@ -186,7 +186,7 @@ int main(void) {
 5. 更新 platformio.ini
 
 ```c
-// 在 main.c 中
+// 在 main.cpp 中
 while (1) {
     Game_StartFrame();
     Game_TaskInput();
@@ -199,7 +199,7 @@ while (1) {
 ```
 
 ### 修改任务优先级
-仅需调整 `main.c` 中的任务顺序，无需修改其他模块。
+仅需调整 `main.cpp` 中的任务顺序，无需修改其他模块。
 
 ### 调试技巧
 在各任务间添加计时代码：

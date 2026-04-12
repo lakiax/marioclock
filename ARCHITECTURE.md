@@ -60,7 +60,7 @@ MarioClock 是一个基于马里奥主题的数字时钟仿真器。它模拟了
 *   **关键函数**: `Game_Init()`, `Game_StartFrame()`, `Game_TaskInput()`, `Game_TaskPhysicsUpdate()`, `Game_TaskUpdateStateMachine()`, `Game_TaskRender()`, `Game_TaskFrameRateControl()`
 
 ### 2.4 主程序入口层 (Main Entry)
-*   **文件**: [`main.c`](src/main.c)
+*   **文件**: [`main.cpp`](src/main.cpp)
 *   **职责**:
     *   初始化游戏
     *   实现任务调度循环（60FPS 轮询）
@@ -183,7 +183,7 @@ MarioClock/
 │   ├── mario_sprites.h        # 精灵资源
 │   └── sprite.h               # 精灵数据结构
 ├── src/                        # 源代码 (实现)
-│   ├── main.c                 # 主程序和任务调度
+│   ├── main.cpp               # 主程序和任务调度
 │   ├── engine.c               # 渲染引擎实现
 │   ├── mario.c                # 角色模块实现
 │   ├── particle.c             # 粒子系统实现
@@ -203,10 +203,10 @@ MarioClock/
 如需添加新的游戏机制（如敌人、道具、音效等），建议：
 1. 为新功能创建独立的模块文件（如 `enemy.h/c`）
 2. 在 `game.c` 中添加相应的初始化和任务函数
-3. 在 `main.c` 的调度循环中插入新任务
+3. 在 `main.cpp` 的调度循环中插入新任务
 
 ### 7.2 修改任务优先级
-编辑 `main.c` 中 while(1) 循环内的任务顺序即可，无需修改其他文件。
+编辑 `main.cpp` 中 while(1) 循环内的任务顺序即可，无需修改其他文件。
 
 ### 7.3 调试与性能分析
 - 利用 `HAL_GetTicks()` 进行帧时间测量
