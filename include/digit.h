@@ -14,6 +14,7 @@
 #define DIGIT_SHATTER_WAIT_MS 1000         // 碎裂后等待多久再开始生成新数字
 #define BRICK_W 10                         // 缩小砖块尺寸（原16）
 #define COLON_X 137                        // 冒号X位置
+#define COLON_CYCLE_INTERVAL_MS 200        // 冒号三种状态轮播间隔（毫秒）
 
 typedef struct {
     int val;           // 当前显示的数字
@@ -50,8 +51,8 @@ void Digit_Update(uint32_t current_ticks, struct tm* tm_p);
 
 /**
  * 渲染所有数字和冒号
- * @param current_ticks 当前 tick 值（用于冒号闪烁）
- * @param tm_p 当前系统时间（用于冒号秒数判断）
+ * @param current_ticks 当前 tick 值（用于冒号状态轮播）
+ * @param tm_p 当前系统时间（保留参数，不再用于冒号）
  * @param atlas 数字图集数据指针
  * @param colon_atlas 冒号图集数据指针
  */

@@ -202,12 +202,14 @@ void Digit_Update(uint32_t current_ticks, struct tm* tm_p) {
 }
 
 void Digit_Render(uint32_t current_ticks, struct tm* tm_p, const uint8_t* atlas, const uint8_t* colon_atlas) {
-    // 冒号 (背景最底层，每秒闪烁，使用金币 sprite_7_6_map)
+    // 冒号 (背景最底层，三种状态轮播，使用金币 sprite_7_6_map)
     int offset_y = digits[0].sy;
-    if (tm_p->tm_sec % 2 == 0) {
-        Engine_DrawScaledAtlasSprite(COLON_X, offset_y + BRICK_W * 1, BRICK_W, BRICK_W, 0, 0, 16, 16, 80, colon_atlas);
-        Engine_DrawScaledAtlasSprite(COLON_X, offset_y + BRICK_W * 3, BRICK_W, BRICK_W, 0, 0, 16, 16, 80, colon_atlas);
-    }
+    // 计算轮播状态 (0:状态1, 1:状态2, 2:状态3, 3:状态2, 4:状态1)
+    uint32_t cycle_position = (current_ticks / COLON_CYCLE_INTERVAL_MS) % 5;
+    uint8_t src_x = (cycle_position == 0 || cycle_position == 4) ? 0 : (cycle_position == 2) ? 32 : 16;
+    // 始终显示两个冒号
+    Engine_DrawScaledAtlasSprite(COLON_X, offset_y + BRICK_W * 1, BRICK_W, BRICK_W, src_x, 0, 16, 16, 80, colon_atlas);
+    Engine_DrawScaledAtlasSprite(COLON_X, offset_y + BRICK_W * 3, BRICK_W, BRICK_W, src_x, 0, 16, 16, 80, colon_atlas);
 
     // 4 个时间数字
     for (int i = 0; i < 4; i++) {
