@@ -35,6 +35,45 @@
 | 右   | GPIO 11 | 低电平有效（接GND按下） |
 | 跳跃 | GPIO 12 | 低电平有效（接GND按下） |
 
+## 网络时间校准（ESP32-S3）
+
+本项目集成了 WiFiManager 和 NTP 客户端，实现自动联网校准系统时间。
+
+### 工作流程
+
+1. **尝试连接**： ESP32 上电后，先尝试连接之前保存在内部 Flash（NVS）里的 Wi‑Fi 账号和密码。
+2. **正常连上**： 如果密码没变，成功连上，直接执行 NTP 校准代码，获取准确的网络时间。
+3. **连接失败**： 如果密码变了或者到了新环境连不上，ESP32 会自动切换为 AP 模式（发射 Wi‑Fi 热点）。
+4. **手机配网**： 用手机搜到一个名为 **ESP32_MarioClock** 的无密码 Wi‑Fi 并连上。手机会自动弹出一个网页。
+5. **保存重启**： 在网页里选择你家的新 Wi‑Fi 并输入新密码。ESP32 收到后，会把新密码存进内部存储，然后自动重启并连上新网络。
+6. **定期校准**： 首次校准成功后，每隔 **24 小时**（可配置）自动重新校准一次，保持时间准确。
+
+### 配置选项
+
+在 [`include/network.h`](include/network.h) 中可修改以下宏定义：
+
+| 宏 | 默认值 | 说明 |
+|----|--------|------|
+| `NTP_SYNC_INTERVAL_MS` | `86400000` (24小时) | NTP 同步间隔（毫秒） |
+| `WIFI_AP_NAME` | `"ESP32_MarioClock"` | AP 模式热点名称 |
+| `NTP_SERVER` | `"ntp.aliyun.com"` | NTP 服务器地址（中国境内可用） |
+| `NTP_TIMEZONE` | `"CST-8"` | 时区字符串（中国标准时间） |
+
+如需修改，可以直接编辑头文件，或在 `platformio.ini` 的 `build_flags` 中添加 `-D` 定义。
+
+### 依赖库
+
+- **[WiFiManager](https://github.com/tzapu/WiFiManager)**：自动配网和凭据存储
+- **[NTPClient](https://github.com/arduino-libraries/NTPClient)**：网络时间协议客户端
+
+这些库已通过 PlatformIO 自动安装，无需手动操作。
+
+### 串口输出信息
+
+- 启动时会打印 Wi‑Fi 连接状态和 IP 地址。
+- NTP 同步成功后会打印当前网络时间。
+- 若进入 AP 模式，会提示用户连接热点进行配网。
+
 ## 切换编译平台
 
 本项目使用 PlatformIO 作为构建工具，支持两种编译目标：
@@ -122,7 +161,8 @@ marioclock/
 │   ├── game.h        # 游戏逻辑
 │   ├── mario.h       # 马里奥角色
 │   ├── digit.h       # 数字显示
-│   └── sprite.h      # 精灵定义
+│   ├── sprite.h      # 精灵定义
+│   └── network.h     # 网络时间校准（ESP32‑S3）
 ├── src/              # 源代码
 │   ├── main.cpp      # 主程序入口（C++，支持双平台）
 │   ├── hal_pc.c      # PC端HAL实现
@@ -131,7 +171,8 @@ marioclock/
 │   ├── game.c        # 游戏逻辑
 │   ├── mario.c       # 马里奥角色控制
 │   ├── digit.c       # 数字显示
-│   └── particle.c    # 粒子效果
+│   ├── particle.c    # 粒子效果
+│   └── network.cpp   # 网络时间校准实现（ESP32‑S3）
 ├── assert/           # 资源文件
 │   └── sprites/      # 精灵图片数据
 ├── TFT_76_284/       # 参考：TFT屏幕测试例程

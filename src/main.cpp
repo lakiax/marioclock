@@ -61,12 +61,16 @@ static void Game_MainLoop(void) {
 #ifdef ESP32S3_TARGET
 // ================= ESP32-S3 Arduino 入口 =================
 
+#include "network.h"
+
 void setup() {
-    // 初始化所有模块
+    network_init_full();
+    // 初始化游戏模块
     Game_Init();
 }
 
 void loop() {
+    network_periodic_task();
     Game_MainLoop();
 }
 
