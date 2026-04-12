@@ -7,6 +7,9 @@
 #include "hal.h"
 #include <Arduino.h>
 #include <SPI.h>
+#ifdef HW_CONTROLLER_BLUEPAD32
+#include "bluetooth_controller.h"
+#endif
 
 // ================= 引脚定义 =================
 #define TFT_MOSI 5
@@ -245,6 +248,10 @@ void HAL_Init(void) {
     TFT_Init();
     HAL_ClearScreen(COLOR_BLACK);
     
+#ifdef HW_CONTROLLER_BLUEPAD32
+    BluetoothController_Init();
+#endif
+    
     #ifdef TFT_TEST_PATTERN
     TFT_TestPattern();
     delay(3000);
@@ -288,11 +295,15 @@ void HAL_UpdateScreen(const uint16_t* framebuffer) {
 }
 
 uint8_t HAL_GetInput(void) {
+#ifdef HW_CONTROLLER_BLUEPAD32
+    return BluetoothController_GetInput();
+#else
     uint8_t btn_state = 0;
     if (digitalRead(BTN_LEFT_PIN) == LOW)  btn_state |= BTN_LEFT;
     if (digitalRead(BTN_RIGHT_PIN) == LOW) btn_state |= BTN_RIGHT;
     if (digitalRead(BTN_JUMP_PIN) == LOW)  btn_state |= BTN_JUMP;
     return btn_state;
+#endif
 }
 
 void HAL_Delay(uint32_t ms) {
