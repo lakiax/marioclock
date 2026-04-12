@@ -10,18 +10,6 @@ static const uint8_t font_3x5[10][5] = {
     {7, 4, 7, 1, 7}, {7, 4, 7, 5, 7}, {7, 1, 1, 1, 1}, {7, 5, 7, 5, 7}, {7, 5, 7, 1, 7}
 };
 
-#define BRICK_W 10   // 缩小砖块尺寸（原16）
-#define COLON_X 137  // 冒号X位置
-
-// 可调参数：数字生成效果的渐显时长和砖块依次出现的间隔
-#define DIGIT_BRICK_ROWS 5                 // 3x5 字体竖排行数
-#define DIGIT_BRICK_COLS 3                 // 3x5 字体横排列数
-#define DIGIT_BRICK_COUNT (DIGIT_BRICK_ROWS * DIGIT_BRICK_COLS)
-#define DIGIT_FADE_IN_DURATION_MS 180      // 每个砖块从透明到完全显示所需的时间
-#define DIGIT_BRICK_STAGGER_MS 45          // 砖块逐个生成的间隔，从下到上、从右到左
-#define DIGIT_SHATTER_STAGGER_MS 40         // 碎裂时砖块随机一个一个触发的间隔
-#define DIGIT_SHATTER_WAIT_MS 1000          // 碎裂后等待多久再开始生成新数字
-
 #define BRICK_ORDER(row, col) (((DIGIT_BRICK_ROWS - 1 - (row)) * DIGIT_BRICK_COLS) + (DIGIT_BRICK_COLS - 1 - (col)))
 
 static TimeDigit digits[4];

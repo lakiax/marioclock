@@ -4,14 +4,6 @@
 #include "engine.h"
 #include "mario_sprites.h"
 
-// 物理常量
-#define GRAVITY 0.5f
-#define JUMP_FORCE -6.0f
-#define MOVE_ACCEL 0.15f
-#define MAX_SPEED 2.0f
-#define GROUND_Y 60
-#define PIXELS_PER_FRAME 6.0f
-
 // 动画定义
 static const uint8_t* frames_idle[] = {sprite_1_2_map};
 static const uint8_t* frames_run[]  = {sprite_1_10_map, sprite_1_16_map, sprite_1_20_map};

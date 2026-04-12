@@ -4,6 +4,17 @@
 #include <stdint.h>
 #include <time.h>
 
+// 数字显示参数
+#define DIGIT_BRICK_ROWS 5                 // 3x5 字体竖排行数
+#define DIGIT_BRICK_COLS 3                 // 3x5 字体横排列数
+#define DIGIT_BRICK_COUNT (DIGIT_BRICK_ROWS * DIGIT_BRICK_COLS)
+#define DIGIT_FADE_IN_DURATION_MS 180      // 每个砖块从透明到完全显示所需的时间
+#define DIGIT_BRICK_STAGGER_MS 45          // 砖块逐个生成的间隔，从下到上、从右到左
+#define DIGIT_SHATTER_STAGGER_MS 40        // 碎裂时砖块随机一个一个触发的间隔
+#define DIGIT_SHATTER_WAIT_MS 1000         // 碎裂后等待多久再开始生成新数字
+#define BRICK_W 10                         // 缩小砖块尺寸（原16）
+#define COLON_X 137                        // 冒号X位置
+
 typedef struct {
     int val;           // 当前显示的数字
     int next_val;      // 下一个目标数字（碎裂完成后生成新数字）

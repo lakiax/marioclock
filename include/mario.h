@@ -5,6 +5,14 @@
 #include <stdbool.h>
 #include "engine.h"  // 包含 Animation 和 Character 类型定义
 
+// 物理常量
+#define GRAVITY 0.6f
+#define JUMP_FORCE -7.0f
+#define MOVE_ACCEL 0.2f
+#define MAX_SPEED 3.0f
+#define GROUND_Y 60
+#define PIXELS_PER_FRAME 6.0f
+
 /**
  * 初始化马里奥角色
  * @param mario 角色指针
