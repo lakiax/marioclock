@@ -13,7 +13,7 @@ static const uint8_t font_3x5[10][5] = {
 
 #define BRICK_W 10                // 与 digit.c 保持一致
 #define DEBRIS_SIZE 5             // 碎屑尺寸：数字碎裂后每块碎片在屏幕上实际显示大小，增大可让碎片更大更清晰
-#define SHATTER_GRAVITY 0.4f      // 碎屑重力加速度，增大后碎片下坠更快，减小可让飞散更缓慢
+#define SHATTER_GRAVITY 0.2f      // 碎屑重力加速度，增大后碎片下坠更快，减小可让飞散更缓慢
 
 #define SHATTER_VX_UL -1.0f       // 左上碎屑初速度 X
 #define SHATTER_VY_UL -3.0f       // 左上碎屑初速度 Y

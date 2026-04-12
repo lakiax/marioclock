@@ -6,10 +6,10 @@
 #include "engine.h"  // 包含 Animation 和 Character 类型定义
 
 // 物理常量
-#define GRAVITY 0.6f
-#define JUMP_FORCE -7.0f
-#define MOVE_ACCEL 0.2f
-#define MAX_SPEED 3.0f
+#define GRAVITY 0.55f
+#define JUMP_FORCE -6.2f
+#define MOVE_ACCEL 0.16f
+#define MAX_SPEED 2.5f
 #define GROUND_Y 60
 #define PIXELS_PER_FRAME 6.0f
 
