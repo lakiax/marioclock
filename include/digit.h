@@ -16,6 +16,23 @@
 #define COLON_X 137                        // 冒号X位置
 #define COLON_CYCLE_INTERVAL_MS 200        // 冒号三种状态轮播间隔（毫秒）
 
+// 金币砖块动画状态
+#define COLON_COIN_STATE_NORMAL 0
+#define COLON_COIN_STATE_UP     1
+#define COLON_COIN_STATE_DOWN   2
+
+typedef struct {
+    int x, y;                // 位置
+    int state;               // 动画状态
+    uint32_t timer;          // 动画起始时间
+    int anim_offset_y;       // 当前动画偏移
+    uint32_t locked_until;    // 碰撞锁定结束时间
+    uint8_t locked;          // 是否已被顶过一次
+} ColonCoin;
+
+// 冒号金币砖块数量
+#define COLON_COIN_COUNT 2
+
 typedef struct {
     int val;           // 当前显示的数字
     int next_val;      // 下一个目标数字（碎裂完成后生成新数字）

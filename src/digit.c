@@ -1,5 +1,50 @@
-#include <math.h>
+
+#include <stdint.h>
 #include "digit.h"
+
+#define COLON_COIN_UP_TIME    80      // 上升时长(ms)
+#define COLON_COIN_DOWN_TIME  80      // 下降回位时长(ms)
+#define COLON_COIN_JUMP_HEIGHT (BRICK_W / 2) // 跳跃高度
+
+static TimeDigit digits[4];
+static Brick bricks[4][DIGIT_BRICK_COUNT];
+static ColonCoin colon_coins[COLON_COIN_COUNT];
+
+// 更新金币砖块动画状态
+static void Digit_UpdateColonCoinAnimation(uint32_t current_ticks) {
+    for (int i = 0; i < COLON_COIN_COUNT; i++) {
+        ColonCoin* coin = &colon_coins[i];
+        if (coin->state == COLON_COIN_STATE_UP) {
+            uint32_t elapsed = current_ticks - coin->timer;
+            if (elapsed < COLON_COIN_UP_TIME) {
+                // 匀速上移到最高点
+                coin->anim_offset_y = -(int)((COLON_COIN_JUMP_HEIGHT * elapsed) / COLON_COIN_UP_TIME);
+            } else {
+                // 上升结束，进入下降
+                coin->state = COLON_COIN_STATE_DOWN;
+                coin->timer = current_ticks;
+                coin->anim_offset_y = -COLON_COIN_JUMP_HEIGHT;
+            }
+        } else if (coin->state == COLON_COIN_STATE_DOWN) {
+            uint32_t elapsed = current_ticks - coin->timer;
+            if (elapsed < COLON_COIN_DOWN_TIME) {
+                // 匀速下移回原位
+                coin->anim_offset_y = -COLON_COIN_JUMP_HEIGHT + (int)((COLON_COIN_JUMP_HEIGHT * elapsed) / COLON_COIN_DOWN_TIME);
+            } else {
+                // 回到原位
+                coin->state = COLON_COIN_STATE_NORMAL;
+                coin->anim_offset_y = 0;
+            }
+        } else {
+            coin->anim_offset_y = 0;
+        }
+
+        if (coin->locked && current_ticks >= coin->locked_until) {
+            coin->locked = 0;
+        }
+    }
+}
+#include <math.h>
 #include "particle.h"
 #include "engine.h"
 #include "hal.h"
@@ -12,8 +57,7 @@ static const uint8_t font_3x5[10][5] = {
 
 #define BRICK_ORDER(row, col) (((DIGIT_BRICK_ROWS - 1 - (row)) * DIGIT_BRICK_COLS) + (DIGIT_BRICK_COLS - 1 - (col)))
 
-static TimeDigit digits[4];
-static Brick bricks[4][DIGIT_BRICK_COUNT]; // 4个数字，每个3x5=15个砖块
+
 
 static uint32_t XorShift32(uint32_t x) {
     x ^= x << 13;
@@ -67,6 +111,17 @@ void Digit_Init(void) {
             bricks[i][b].timer = 0;
         }
     }
+
+    // 初始化冒号金币砖块
+    for (int i = 0; i < COLON_COIN_COUNT; i++) {
+        colon_coins[i].x = COLON_X;
+        colon_coins[i].y = 0; // y 由 Digit_InitFromTime 设置
+        colon_coins[i].state = COLON_COIN_STATE_NORMAL;
+        colon_coins[i].timer = 0;
+        colon_coins[i].anim_offset_y = 0;
+        colon_coins[i].locked_until = 0;
+        colon_coins[i].locked = 0;
+    }
 }
 
 void Digit_InitFromTime(struct tm* tm_p, int offset_y) {
@@ -92,6 +147,21 @@ void Digit_InitFromTime(struct tm* tm_p, int offset_y) {
             }
         }
     }
+
+    // 设置冒号金币砖块的 y 坐标
+    colon_coins[0].y = offset_y + BRICK_W * 1;
+    colon_coins[1].y = offset_y + BRICK_W * 3;
+
+    colon_coins[0].anim_offset_y = 0;
+    colon_coins[1].anim_offset_y = 0;
+    colon_coins[0].state = COLON_COIN_STATE_NORMAL;
+    colon_coins[1].state = COLON_COIN_STATE_NORMAL;
+    colon_coins[0].timer = 0;
+    colon_coins[1].timer = 0;
+    colon_coins[0].locked_until = 0;
+    colon_coins[1].locked_until = 0;
+    colon_coins[0].locked = 0;
+    colon_coins[1].locked = 0;
 }
 
 // 渲染 3x5 数字的砖块，支持从下到上、从右到左逐个砖块弹出并逐渐从透明到不透明
@@ -138,6 +208,8 @@ static void DrawBrickDigit3x5(int digit_idx, int sx, int sy, int digit, const ui
 }
 
 void Digit_Update(uint32_t current_ticks, struct tm* tm_p) {
+        // 更新金币砖块动画
+        Digit_UpdateColonCoinAnimation(current_ticks);
     int target_time[4] = { tm_p->tm_hour / 10, tm_p->tm_hour % 10, tm_p->tm_min / 10, tm_p->tm_min % 10 };
 
     for (int i = 0; i < 4; i++) {
@@ -203,13 +275,14 @@ void Digit_Update(uint32_t current_ticks, struct tm* tm_p) {
 
 void Digit_Render(uint32_t current_ticks, struct tm* tm_p, const uint8_t* atlas, const uint8_t* colon_atlas) {
     // 冒号 (背景最底层，三种状态轮播，使用金币 sprite_7_6_map)
-    int offset_y = digits[0].sy;
     // 计算轮播状态 (0:状态1, 1:状态2, 2:状态3, 3:状态2, 4:状态1)
     uint32_t cycle_position = (current_ticks / COLON_CYCLE_INTERVAL_MS) % 5;
     uint8_t src_x = (cycle_position == 0 || cycle_position == 4) ? 0 : (cycle_position == 2) ? 32 : 16;
-    // 始终显示两个冒号
-    Engine_DrawScaledAtlasSprite(COLON_X, offset_y + BRICK_W * 1, BRICK_W, BRICK_W, src_x, 0, 16, 16, 80, colon_atlas);
-    Engine_DrawScaledAtlasSprite(COLON_X, offset_y + BRICK_W * 3, BRICK_W, BRICK_W, src_x, 0, 16, 16, 80, colon_atlas);
+    // 渲染两个冒号金币砖块，支持动画
+    for (int i = 0; i < COLON_COIN_COUNT; i++) {
+        int y = colon_coins[i].y + colon_coins[i].anim_offset_y;
+        Engine_DrawScaledAtlasSprite(colon_coins[i].x, y, BRICK_W, BRICK_W, src_x, 0, 16, 16, 80, colon_atlas);
+    }
 
     // 4 个时间数字
     for (int i = 0; i < 4; i++) {
@@ -231,6 +304,76 @@ int Digit_CheckCollision(float mario_x, float mario_y, float mario_vx, float mar
     float mario_top = *out_y;
     float mario_bottom = *out_y + 16;
 
+    // 先检查冒号金币砖块碰撞，确保可撞击且不会和马里奥重叠
+    for (int i = 0; i < COLON_COIN_COUNT; i++) {
+        ColonCoin* coin = &colon_coins[i];
+        int coin_left = coin->x;
+        int coin_right = coin->x + BRICK_W;
+        int coin_top = coin->y + coin->anim_offset_y;
+        int coin_bottom = coin_top + BRICK_W;
+
+        if (mario_right > coin_left && mario_left < coin_right &&
+            mario_bottom > coin_top && mario_top < coin_bottom) {
+            float overlap_width = fminf(mario_right, coin_right) - fmaxf(mario_left, coin_left);
+            float overlap_height = fminf(mario_bottom, coin_bottom) - fmaxf(mario_top, coin_top);
+
+            if (overlap_width <= 0 || overlap_height <= 0) {
+                continue;
+            }
+
+            if (coin->locked) {
+                if (overlap_width < overlap_height) {
+                    if (mario_x + 8.0f < coin_left + BRICK_W / 2.0f) {
+                        *out_x = coin_left - 16;
+                    } else {
+                        *out_x = coin_right;
+                    }
+                    return 1;
+                }
+
+                if (mario_y + 8.0f < coin_top + BRICK_W / 2.0f) {
+                    *out_y = coin_top - 16;
+                    return 2;
+                }
+
+                *out_y = coin_bottom;
+                return 3;
+            }
+
+            if (mario_vy < 0) {
+                // 从下方顶到金币砖块：触发抖动 + 弹起
+                *out_y = coin_bottom;
+                mario_top = *out_y;
+                mario_bottom = *out_y + 16;
+                coin->state = COLON_COIN_STATE_UP;
+                coin->timer = HAL_GetTicks();
+                coin->anim_offset_y = 0;
+                coin->locked = 1;
+                coin->locked_until = coin->timer + COLON_COIN_UP_TIME + COLON_COIN_DOWN_TIME + 80;
+                return 3;
+            }
+
+            // 其它方向的碰撞也强制分离，避免重叠
+            if (overlap_width < overlap_height) {
+                if (mario_x + 8.0f < coin_left + BRICK_W / 2.0f) {
+                    *out_x = coin_left - 16;
+                } else {
+                    *out_x = coin_right;
+                }
+                return 1;
+            }
+
+            if (mario_y + 8.0f < coin_top + BRICK_W / 2.0f) {
+                *out_y = coin_top - 16;
+                return 2;
+            }
+
+            *out_y = coin_bottom;
+            return 3;
+        }
+    }
+
+    // 普通砖块逻辑保持不变
     for (int d = 0; d < 4; d++) {
         int digit = digits[d].val;
         int idx = 0;
